@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corte de Ventas</title>
+    <link rel="stylesheet" href="/CSS/style-corteX.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta2/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fas fa-cash-register"></i> Corte de Ventas</h1>
+        <div class="form-group">
+            <label for="fecha">Selecciona la fecha:</label>
+            <input type="date" id="fecha">
+            <button onclick="obtenerCorte()">Obtener Corte</button>
+        </div>
+        <div class="form-group">
+            <button onclick="realizarCorte()">Realizar Corte</button>
+        </div>
+        <div class="resultados">
+            <h2>Total de Ventas del Día</h2>
+            <p id="totalVentas">-</p>
+            <h2>Ventas por Vendedor</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Vendedor</th>
+                        <th>Total Vendido</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaVentas">
+                    <!-- Las filas se agregarán dinámicamente aquí -->
+                </tbody>
+            </table>
+            <h2 id="estadoCorte">Estado del Corte: Sin realizar</h2>
+        </div>
+        <div class="ver-ventas-al-momento">
+            <button onclick="verVentas()">Regresar</button>
+        </div>
+    </div>
+   
+
+    <script>
+         function verVentas() {
+            window.location="index.html"
+        }
+        let corteRealizado = false;
+
+        async function obtenerCorte() {
+            const fecha = document.getElementById('fecha').value;
+            if (!fecha) {
+                alert('Por favor, selecciona una fecha.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:3000/api/corte?fecha=${fecha}`);
+                if (!response.ok) {
+                    throw new Error('Error en la respuesta del servidor');
+                }
+                const data = await response.json();
+
+                // Mostrar el total de ventas del día
+                document.getElementById('totalVentas').textContent = data.total || '0.00';
+
+                // Limpiar la tabla de ventas por vendedor
+                const tablaVentas = document.getElementById('tablaVentas');
+                tablaVentas.innerHTML = '';
+
+                // Agregar filas a la tabla con los datos de ventas por vendedor
+                if (Array.isArray(data.ventasPorVendedor)) {
+                    data.ventasPorVendedor.forEach(vendedor => {
+                        const row = document.createElement('tr');
+                        const cellNombre = document.createElement('td');
+                        const cellTotal = document.createElement('td');
+
+                        cellNombre.textContent = vendedor.nombre;
+                        cellTotal.textContent = vendedor.total || '0.00';
+
+                        row.appendChild(cellNombre);
+                        row.appendChild(cellTotal);
+                        tablaVentas.appendChild(row);
+                    });
+                } else {
+                    console.error('ventasPorVendedor no es un array:', data.ventasPorVendedor);
+                }
+            } catch (error) {
+                console.error('Error al obtener el corte de ventas:', error);
+                alert('Error al obtener el corte de ventas');
+            }
+        }
+
+        async function realizarCorte() {
+            try {
+                const response = await fetch('http://localhost:3000/api/realizarCorte', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                if (!response.ok) {
+                    throw new Error('Error en la respuesta del servidor al realizar el corte');
+                }
+                const data = await response.json();
+                corteRealizado = data.corteRealizado;
+
+                document.getElementById('estadoCorte').textContent = `Estado del Corte: ${corteRealizado ? 'Realizado' : 'Sin realizar'}`;
+            } catch (error) {
+                console.error('Error al realizar el corte:', error);
+                alert('Error al realizar el corte');
+            }
+        }
+
+        async function registrarVenta(id_vendedor, monto) {
+            try {
+                const response = await fetch('http://localhost:3000/api/ventas', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ id_vendedor, monto })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error en la respuesta del servidor al registrar la venta');
+                }
+
+                alert('Venta registrada correctamente');
+            } catch (error) {
+                console.error('Error al registrar la venta:', error);
+                alert('Error al registrar la venta');
+            }
+        }
+    </script>
+</body>
+</html>

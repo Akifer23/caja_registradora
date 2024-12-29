@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caja Registradora</title>
+    <link rel="stylesheet" href="/CSS/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="section">
+            <h2>Botones Numéricos</h2>
+            <div class="button-grid">
+                <button onclick="addToInput(1)">1</button>
+                <button onclick="addToInput(2)">2</button>
+                <button onclick="addToInput(3)">3</button>
+                <button onclick="addToInput(4)">4</button>
+                <button onclick="addToInput(5)">5</button>
+                <button onclick="addToInput(6)">6</button>
+                <button onclick="addToInput(7)">7</button>
+                <button onclick="addToInput(8)">8</button>
+                <button onclick="addToInput(9)">9</button>
+                <button onclick="addToInput(0)">0</button>
+                <button onclick="clearInput()">C</button> <!-- Botón para limpiar el input -->
+            </div>
+        </div>
+        <div class="section">
+            <h2>Vendedores</h2>
+            <div class="button-grid" id="vendedores">
+                <button onclick="selectVendedor(this, 1)">1</button>
+                <button onclick="selectVendedor(this, 2)">2</button>
+                <button onclick="selectVendedor(this, 3)">3</button>
+                <button onclick="selectVendedor(this, 4)">4</button>
+                <button onclick="selectVendedor(this, 5)">5</button>
+                <button onclick="selectVendedor(this, 6)">6</button>
+                <button onclick="selectVendedor(this, 7)">7</button>
+                <button onclick="selectVendedor(this, 8)">8</button>
+                <button onclick="selectVendedor(this, 9)">9</button>
+                <button onclick="selectVendedor(this, 10)">10</button>
+            </div>
+        </div>
+        <div class="section">
+            <h2>Cantidad a Cobrar</h2>
+            <input type="number" id="cantidadCobrar" placeholder="Introduce la cantidad" onclick="selectInput(this)">
+            <button onclick="cobrar()">Cobrar</button>
+            <h2>Cantidad Pagada</h2>
+            <input type="number" id="cantidadPagada" placeholder="Introduce la cantidad" onclick="selectInput(this)">
+            <button onclick="calcularCambio()">Calcular Cambio</button>
+            <h2>Cambio</h2>
+            <input type="number" id="cambio" placeholder="Cambio" disabled>
+        </div>
+    </div>
+
+    <!-- Botón para cambiar de página -->
+    <div class="footer-container">
+        <button onclick="mostrarModal()">Corte</button>
+        
+    </div>
+
+    <!-- Modal de Contraseña -->
+    <div id="passwordModal" class="modal oculto">
+        <div class="modal-content">
+            <h2>Contraseña requerida</h2>
+            <input type="password" id="passwordInput" placeholder="Introduce la contraseña">
+            <button onclick="verificarPassword()">Enviar</button>
+            <button onclick="cerrarModal()">Cancelar</button>
+        </div>
+    </div>
+    <div class="ver-ventas-al-momento">
+        <button onclick="verVentas()">Ver Ventas</button>
+    </div>
+    <script>
+        function verVentas() {
+            window.location="ventas_al_momento.html"
+        }
+        let selectedInput = null;
+        let selectedVendedor = null;
+
+        function addToInput(value) {
+            if (selectedInput) {
+                selectedInput.value = (selectedInput.value || '') + value;
+            } else {
+                alert('Por favor, selecciona un campo de entrada.');
+            }
+        }
+
+        function clearInput() {
+            if (selectedInput) {
+                selectedInput.value = '';
+            } else {
+                alert('Por favor, selecciona un campo de entrada.');
+            }
+        }
+
+        function selectInput(input) {
+            selectedInput = input;
+        }
+
+        function selectVendedor(button, vendedor) {
+            const buttons = document.querySelectorAll('#vendedores button');
+            buttons.forEach(btn => btn.classList.remove('selected'));
+            button.classList.add('selected');
+            selectedVendedor = vendedor;
+        }
+
+        function calcularCambio() {
+            const cantidadCobrar = parseFloat(document.getElementById('cantidadCobrar').value);
+            const cantidadPagada = parseFloat(document.getElementById('cantidadPagada').value);
+            const cambio = cantidadPagada - cantidadCobrar;
+            document.getElementById('cambio').value = cambio.toFixed(2);
+        }
+
+        async function cobrar() {
+            if (!selectedVendedor) {
+                alert('Por favor, selecciona un vendedor antes de cobrar.');
+                return;
+            }
+            const cantidadCobrar = document.getElementById('cantidadCobrar').value;
+            if (cantidadCobrar === '') {
+                alert('Por favor, introduce una cantidad a cobrar.');
+                return;
+            }
+
+            const data = {
+                id_vendedor: selectedVendedor,
+                monto: parseFloat(cantidadCobrar)
+            };
+
+            try {
+                const response = await fetch('http://localhost:3000/api/ventas', { // Asegúrate de que la URL sea correcta
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.text();
+                alert(result);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al registrar la venta');
+            }
+
+            calcularCambio();
+            document.getElementById('cantidadCobrar').value = '';
+            document.getElementById('cantidadPagada').value = '';
+            document.getElementById('cambio').value = '';
+        }
+
+        function mostrarModal() {
+            document.getElementById('passwordModal').classList.remove('oculto');
+            document.getElementById('passwordModal').classList.add('visible');
+        }
+
+        function cerrarModal() {
+            document.getElementById('passwordModal').classList.remove('visible');
+            document.getElementById('passwordModal').classList.add('oculto');
+        }
+
+        function verificarPassword() {
+            const password = document.getElementById('passwordInput').value;
+            const correctPassword = '1234'; // Cambia esto por la contraseña que desees
+
+            if (password === correctPassword) {
+                window.location.href = 'corte_Z.html'; // Cambia esto por la URL de la nueva página
+            } else {
+                alert('Contraseña incorrecta');
+            }
+        }
+    </script>
+</body>
+</html>
